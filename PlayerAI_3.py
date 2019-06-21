@@ -3,6 +3,8 @@ from collections import deque
 from BaseAI_3 import BaseAI
 import Displayer_3
 from sys import exit
+import random
+
 
 class PlayerAI(BaseAI):
     def getMove(self, grid):
@@ -10,28 +12,12 @@ class PlayerAI(BaseAI):
         
         # Selects a random move and returns it
         moveset = grid.getAvailableMoves()
-        print(moveset)
+        print('moveset:', moveset)
         
-    
-        '''
-        self.ourGridDisplay(grid)
-        currScore = self.gridWeight(grid)
+        alpha = float("-inf")
+        beta = float("inf")
         
-        print("Current score: ", currScore)
-        
-        print("---------------------------------------")
-        print("---------------------------------------")
-        score,direction = self.minimax(grid, 2)
-        
-        
-        self.ourGridDisplay(moveset[direction][1])
-        
-        print("Next Score: ", score)
-        print("Direction: ", dirAr[direction])
-        
-        exit()
-        '''
-        score,direction = self.minimax(grid, 2)
+        score,direction = self.minimax(grid,alpha,beta, 3)
         print("Next Score: ", score)
         print("Direction: ", dirAr[direction])
         
@@ -41,11 +27,17 @@ class PlayerAI(BaseAI):
 
         
     def gridWeight(self, grid):
+        '''
         weightedGrid = [[6,5,4,3],
                         [5,4,3,2],
                         [4,3,2,1],
                         [3,2,1,0]]
+        '''
         
+        weightedGrid = [[16,15,14,13],
+                        [9,10,11,12],
+                        [8,7,6,5],
+                        [1,2,3,4]]
 
         
         totalWeight = 0
@@ -59,14 +51,14 @@ class PlayerAI(BaseAI):
                 
     def squarePenalty(self, grid, totalWeight):
         numFilledSquares = 16 - len(grid.getAvailableCells())
-        totalWeight = totalWeight / (numFilledSquares*numFilledSquares)
+        #totalWeight = totalWeight / (numFilledSquares)
         return totalWeight
     
-    def minimax(self,grid,maxDepth):
-        score, direction = self.maxValue(grid,maxDepth)
+    def minimax(self,grid,alpha,beta,maxDepth):
+        score, direction = self.maxValue(grid, alpha, beta, maxDepth)
         return score,direction
     
-    def maxValue(self, grid, maxDepth):
+    def maxValue(self, grid, alpha, beta, maxDepth):
         moveset = grid.getAvailableMoves()
         maxScore = float("-inf")
     
@@ -79,14 +71,78 @@ class PlayerAI(BaseAI):
             direction = moveTup[0]
             nextGrid = moveTup[1]
             #print("moveTup: ",moveTup)
-            score, _ = self.minValue(nextGrid, maxDepth - 1)
+            score, _ = self.minValue(nextGrid, alpha, beta, maxDepth - 1)
     
             if score > maxScore:
                 maxScore = score
                 maxDirection = direction
+            if score >= beta:
+                return maxScore, maxDirection
+            alpha = max(alpha, score)
         return maxScore, maxDirection
     
-    def minValue(self, grid, maxDepth):
+    def minValue(self, grid, alpha, beta, maxDepth):
+        posset = grid.getAvailableCells()
+        minScore = float("inf")
+        
+        
+        if maxDepth == 0 or len(posset) == 0:
+            return self.gridWeight(grid), None
+        
+        minDirection = None 
+        
+        minScore = float("inf")
+        #minPos = None
+        
+        probTwo = 0.9
+        probFour = 0.1
+        
+        for pos in posset:
+            row,col = pos
+            
+            tmpGrid = grid.clone()
+            
+            tmpGrid.setCellValue((row,col),2)
+            
+            score, _ = self.maxValue(tmpGrid, alpha, beta, maxDepth - 1)
+            
+            score = score*probTwo
+            
+            if score < minScore:
+                minScore = score
+                #minPos = pos
+                
+            if score <= alpha:
+                return minScore, minDirection
+            beta = min(beta, score)
+                
+            
+        for pos in posset:
+            row,col = pos
+            
+            tmpGrid = grid.clone()
+            tmpGrid.setCellValue((row,col),4)
+            
+            score, _ = self.maxValue(tmpGrid, alpha, beta, maxDepth - 1)
+            
+            score = score*probFour
+            
+            if score < minScore:
+                minScore = score
+                #minPos = pos
+                
+            if score <= alpha:
+                return minScore, minDirection
+            
+            beta = min(beta, score)
+            
+        return minScore, None
+            
+    
+    
+    
+    
+    def oldMinValue(self, grid, alpha, beta, maxDepth):
         moveset = grid.getAvailableMoves()
         minScore = float("inf")
         
@@ -101,11 +157,18 @@ class PlayerAI(BaseAI):
             direction = moveTup[0]
             nextGrid = moveTup[1]
             
-            score, _ = self.maxValue(nextGrid, maxDepth - 1)
+            score, _ = self.maxValue(nextGrid, alpha, beta, maxDepth - 1)
+            
+            randVal = random.uniform(0, 1)
+            
             if score < minScore:
                 minScore = score
                 minDirection = direction 
+            if score <= alpha:
+                return minScore, minDirection
+            beta = min(beta, score)
         return minScore, minDirection
+    
     
     
     

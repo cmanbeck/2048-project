@@ -66,6 +66,7 @@ class GameManager:
         self.prevTime = time.process_time()
 
         while self.grid.canMove() and not self.over:
+        
             # Copy to Ensure AI Cannot Change the Real Grid to Cheat
             gridCopy = self.grid.clone()
 
